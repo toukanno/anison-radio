@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>anison-radio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <p class="brand">anison-radio</p>
+      <h1>アニソンを、もっと自由に。</h1>
+      <p class="subtitle">
+        Spotifyライクな操作感で、人気アニメ曲のプレイリストを発見・再生できるデモアプリ。
+      </p>
+    </header>
+
+    <main class="layout">
+      <section class="panel now-playing">
+        <h2>Now Playing</h2>
+        <p id="current-title">曲を選んで再生</p>
+        <p id="current-meta">—</p>
+        <div class="controls">
+          <button id="play-btn" aria-label="再生/一時停止">▶ 再生</button>
+          <button id="next-btn" aria-label="次へ">⏭ 次へ</button>
+        </div>
+      </section>
+
+      <section class="panel library">
+        <div class="library-head">
+          <h2>Discover</h2>
+          <input id="search" type="search" placeholder="曲名・作品名で検索" />
+        </div>
+        <ul id="track-list" class="track-list"></ul>
+      </section>
+    </main>
+
+    <template id="track-template">
+      <li class="track-item">
+        <button class="track-select" type="button">
+          <span class="track-title"></span>
+          <span class="track-meta"></span>
+        </button>
+      </li>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
