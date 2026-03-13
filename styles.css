@@ -1,0 +1,150 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f1226;
+  --panel: #171b35;
+  --accent: #ff4d9d;
+  --accent2: #5ef7ff;
+  --text: #f5f7ff;
+  --muted: #9aa4cc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: radial-gradient(circle at 10% 20%, #1a2050 0%, var(--bg) 65%);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.hero {
+  padding: 2.5rem 1.25rem 1rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.brand {
+  margin: 0;
+  font-weight: 700;
+  color: var(--accent2);
+}
+
+h1 {
+  margin: 0.25rem 0 0.75rem;
+  font-size: clamp(1.8rem, 4vw, 2.75rem);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+.layout {
+  display: grid;
+  gap: 1rem;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+@media (min-width: 820px) {
+  .layout {
+    grid-template-columns: 280px 1fr;
+  }
+}
+
+.panel {
+  background: color-mix(in oklab, var(--panel) 94%, black);
+  border: 1px solid #2a2f57;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.now-playing #current-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.now-playing #current-meta {
+  margin-top: 0;
+  color: var(--muted);
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.controls button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  color: white;
+  background: linear-gradient(90deg, var(--accent), #ff7a55);
+  cursor: pointer;
+}
+
+#next-btn {
+  background: #2d325f;
+}
+
+.library-head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#search {
+  width: min(260px, 100%);
+  border: 1px solid #343b6f;
+  border-radius: 0.6rem;
+  padding: 0.45rem 0.65rem;
+  background: #10142b;
+  color: var(--text);
+}
+
+.track-list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.track-select {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #2d3465;
+  background: #121735;
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.7rem;
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+}
+
+.track-select:hover,
+.track-select.active {
+  border-color: var(--accent);
+  background: #1f1a39;
+}
+
+.track-title {
+  font-weight: 600;
+}
+
+.track-meta {
+  font-size: 0.86rem;
+  color: var(--muted);
+}
