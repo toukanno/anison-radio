@@ -2,6 +2,24 @@
 
 All notable changes to anison-radio are documented here.
 
+## [1.1.0] - 2026-05-19
+
+### Added
+- **Now Playing** modal — click the player cover to open a hero view
+  with large art, track metadata, and animated bars that pause when
+  playback is paused.
+- **Sleep timer** — 5 / 15 / 30 / 60 minute options that stop playback
+  automatically, available from the topbar.
+- **Hash-based routing** — the URL reflects the current view and
+  selected playlist, so reloads and shared links land in the right
+  place.
+- **Cover visualizer** — a small WebAudio analyser draws a colour
+  spectrum on top of the player cover while the tone engine is active.
+
+### Changed
+- Player cover is now a focusable button (opens Now Playing).
+- Service worker cache bumped to v1.1.0 so updates land cleanly.
+
 ## [1.0.0] - 2026-05-19
 
 First release-ready version. Complete rewrite of the early prototype

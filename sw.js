@@ -1,6 +1,6 @@
 // anison-radio service worker — minimal app-shell cache for offline launch.
 
-const VERSION = "v1.0.0";
+const VERSION = "v1.1.0";
 const CACHE = `anison-radio-${VERSION}`;
 const SHELL = [
   "./",

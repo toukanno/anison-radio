@@ -50,6 +50,7 @@
             <input id="search" type="search" placeholder="曲名・アーティスト・作品名で検索" autocomplete="off" />
           </div>
           <div class="topbar-actions">
+            <button id="sleep-btn" class="ghost-btn" title="スリープタイマー" aria-label="スリープタイマー">⏱</button>
             <button id="help-btn" class="ghost-btn" title="ショートカット" aria-label="キーボードショートカット">?</button>
             <button id="install-btn" class="pill-btn" hidden>アプリをインストール</button>
           </div>
@@ -123,7 +124,10 @@
 
       <footer class="player" aria-label="プレイヤー">
         <div class="player-meta">
-          <div class="cover" id="player-cover" aria-hidden="true"></div>
+          <button id="cover-expand" class="cover" aria-label="Now Playing を開く">
+            <span class="cover-art" id="player-cover" aria-hidden="true"></span>
+            <canvas id="player-viz" class="player-viz" aria-hidden="true"></canvas>
+          </button>
           <div class="meta-text">
             <p id="current-title" class="meta-title">曲を選んで再生</p>
             <p id="current-meta" class="meta-sub">—</p>
@@ -189,6 +193,40 @@
       <form method="dialog">
         <h3>プレイリストに追加</h3>
         <ul id="add-to-playlist-list" class="dialog-list"></ul>
+        <menu>
+          <button value="cancel" class="ghost-btn">閉じる</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="now-playing-dialog" class="dialog np-dialog">
+      <form method="dialog">
+        <button class="np-close" value="cancel" aria-label="閉じる">×</button>
+        <div class="np-wrap">
+          <div id="np-cover" class="np-cover" aria-hidden="true"></div>
+          <h2 id="np-title" class="np-title"></h2>
+          <p id="np-sub" class="np-sub"></p>
+          <p id="np-anime" class="np-anime"></p>
+          <div id="np-bars" class="np-bars" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <p class="muted np-hint">プレイヤーのコントロールは下のバーから操作できます</p>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="sleep-dialog" class="dialog">
+      <form method="dialog">
+        <h3>スリープタイマー</h3>
+        <p class="muted" id="sleep-status">タイマーは設定されていません</p>
+        <div class="sleep-options">
+          <button class="pill-btn" value="ok" data-min="5">5分</button>
+          <button class="pill-btn" value="ok" data-min="15">15分</button>
+          <button class="pill-btn" value="ok" data-min="30">30分</button>
+          <button class="pill-btn" value="ok" data-min="60">60分</button>
+          <button class="ghost-btn" value="ok" data-min="0">解除</button>
+        </div>
         <menu>
           <button value="cancel" class="ghost-btn">閉じる</button>
         </menu>

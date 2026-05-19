@@ -98,6 +98,7 @@ const playbackEngine = (() => {
   let toneCtx = null;
   let toneOsc = null;
   let toneGain = null;
+  let toneAnalyser = null;
   let toneTimer = null;
   let toneStartedAt = 0;
   let toneElapsed = 0; // when paused
@@ -149,17 +150,22 @@ const playbackEngine = (() => {
     if (ctx.state === "suspended") ctx.resume();
     toneOsc = ctx.createOscillator();
     toneGain = ctx.createGain();
+    if (!toneAnalyser) {
+      toneAnalyser = ctx.createAnalyser();
+      toneAnalyser.fftSize = 64;
+    }
     let h = 0;
     for (let i = 0; i < track.id.length; i++) h = (h * 31 + track.id.charCodeAt(i)) >>> 0;
     const baseHz = 220 + (h % 220);
     toneOsc.type = "triangle";
     toneOsc.frequency.value = baseHz;
-    // Soft attack so it doesn't pop when starting.
     const target = currentGain();
     const now = ctx.currentTime;
     toneGain.gain.setValueAtTime(0, now);
     toneGain.gain.linearRampToValueAtTime(target, now + 0.05);
-    toneOsc.connect(toneGain).connect(ctx.destination);
+    toneOsc.connect(toneGain);
+    toneGain.connect(toneAnalyser);
+    toneGain.connect(ctx.destination);
     toneOsc.start();
     emit("meta", toneDuration);
     tick();
@@ -260,6 +266,16 @@ const playbackEngine = (() => {
       if (mode === "audio") return audioEl.duration || 0;
       if (mode === "tone") return toneDuration;
       return 0;
+    },
+
+    analyser() {
+      return mode === "tone" ? toneAnalyser : null;
+    },
+
+    isPlaying() {
+      if (mode === "audio") return !audioEl.paused;
+      if (mode === "tone") return !!toneOsc;
+      return false;
     },
   };
 })();
@@ -685,6 +701,17 @@ function renderPlayer() {
   el.likeBtn.setAttribute("aria-pressed", String(!!liked));
   el.volume.value = String(Math.round(state.volume * 100));
   el.volume.style.setProperty("--p", `${Math.round(state.volume * 100)}%`);
+
+  const np = document.getElementById("now-playing-dialog");
+  if (np?.open) {
+    np.dataset.paused = String(!state.playing);
+    if (t) {
+      document.getElementById("np-cover")?.style.setProperty("--cover", coverGradient(t));
+      document.getElementById("np-title").textContent = t.title;
+      document.getElementById("np-sub").textContent = t.artist;
+      document.getElementById("np-anime").textContent = t.anime;
+    }
+  }
 }
 
 function renderViews() {
@@ -948,6 +975,147 @@ function updateMediaSession(track) {
 }
 
 // ---------------------------------------------------------------------------
+// Hash-based router
+
+const VIEWS = new Set(["home", "search", "library", "queue", "playlist"]);
+
+function parseHash() {
+  const h = (location.hash || "").replace(/^#\/?/, "");
+  if (!h) return { view: "home" };
+  const [view, id] = h.split("/");
+  if (!VIEWS.has(view)) return { view: "home" };
+  if (view === "playlist") return { view, id };
+  return { view };
+}
+
+function writeHash() {
+  let next;
+  if (state.view === "playlist" && state.selectedPlaylistId) {
+    next = `#/playlist/${state.selectedPlaylistId}`;
+  } else {
+    next = `#/${state.view}`;
+  }
+  if (location.hash !== next) history.replaceState(null, "", next);
+}
+
+window.addEventListener("hashchange", () => {
+  const { view, id } = parseHash();
+  if (view === "playlist") {
+    if (id && state.playlists.some((p) => p.id === id)) openPlaylist(id);
+    else switchView("home");
+  } else {
+    switchView(view);
+  }
+});
+
+// Hook hash writes into navigation.
+const _switchView = switchView;
+switchView = function (view) {
+  _switchView(view);
+  writeHash();
+};
+const _openPlaylist = openPlaylist;
+openPlaylist = function (id) {
+  _openPlaylist(id);
+  writeHash();
+};
+
+// ---------------------------------------------------------------------------
+// Sleep timer
+
+let sleepTimerId = null;
+let sleepEndsAt = 0;
+
+function setSleepTimer(minutes) {
+  if (sleepTimerId) { clearTimeout(sleepTimerId); sleepTimerId = null; }
+  if (!minutes) {
+    sleepEndsAt = 0;
+    toast("スリープタイマー解除");
+    return;
+  }
+  sleepEndsAt = Date.now() + minutes * 60_000;
+  sleepTimerId = setTimeout(() => {
+    if (state.playing) togglePlay();
+    sleepTimerId = null;
+    sleepEndsAt = 0;
+    toast("スリープ: 再生を停止しました");
+  }, minutes * 60_000);
+  toast(`スリープタイマー: ${minutes}分後に停止`);
+}
+
+$("#sleep-btn").addEventListener("click", () => {
+  const dlg = $("#sleep-dialog");
+  const status = $("#sleep-status");
+  if (sleepEndsAt) {
+    const mins = Math.max(0, Math.ceil((sleepEndsAt - Date.now()) / 60_000));
+    status.textContent = `あと約 ${mins} 分で停止します`;
+  } else {
+    status.textContent = "タイマーは設定されていません";
+  }
+  dlg.showModal();
+});
+$$("#sleep-dialog [data-min]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    setSleepTimer(Number(btn.dataset.min));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Now Playing modal + canvas visualizer
+
+const npDialog = $("#now-playing-dialog");
+const npCover = $("#np-cover");
+const npTitle = $("#np-title");
+const npSub   = $("#np-sub");
+const npAnime = $("#np-anime");
+
+function openNowPlaying() {
+  const t = trackById(state.currentId);
+  if (!t) { toast("曲を選んでください"); return; }
+  npCover.style.setProperty("--cover", coverGradient(t));
+  npTitle.textContent = t.title;
+  npSub.textContent = t.artist;
+  npAnime.textContent = t.anime;
+  npDialog.dataset.paused = String(!state.playing);
+  npDialog.showModal();
+}
+
+$("#cover-expand").addEventListener("click", openNowPlaying);
+
+const viz = $("#player-viz");
+const vizCtx = viz?.getContext("2d");
+function sizeCanvas() {
+  if (!viz) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = viz.getBoundingClientRect();
+  viz.width = Math.max(1, Math.round(rect.width * dpr));
+  viz.height = Math.max(1, Math.round(rect.height * dpr));
+}
+window.addEventListener("resize", sizeCanvas);
+
+function tickViz() {
+  requestAnimationFrame(tickViz);
+  if (!vizCtx) return;
+  if (!viz.width || !viz.height) sizeCanvas();
+  vizCtx.clearRect(0, 0, viz.width, viz.height);
+  const a = playbackEngine.analyser?.();
+  if (!a || !playbackEngine.isPlaying()) return;
+  const bins = a.frequencyBinCount;
+  const data = new Uint8Array(bins);
+  a.getByteFrequencyData(data);
+  const bars = Math.min(8, bins);
+  const w = viz.width / bars;
+  for (let i = 0; i < bars; i++) {
+    const v = data[i * Math.floor(bins / bars)] / 255;
+    const h = v * viz.height;
+    vizCtx.fillStyle = `hsla(${(i * 36 + 320) % 360} 90% 60% / 0.85)`;
+    vizCtx.fillRect(i * w + 1, viz.height - h, Math.max(1, w - 2), h);
+  }
+}
+sizeCanvas();
+requestAnimationFrame(tickViz);
+
+// ---------------------------------------------------------------------------
 // PWA: install prompt + service worker
 
 let deferredInstall = null;
@@ -977,7 +1145,19 @@ playbackEngine.setVolume(state.volume, state.muted);
 el.seek.style.setProperty("--p", "0%");
 el.timeNow.textContent = "0:00";
 el.timeTotal.textContent = "0:00";
+
+// Apply hash-based view at boot (overrides persisted view when present).
+if (location.hash) {
+  const { view, id } = parseHash();
+  if (view === "playlist" && id && state.playlists.some((p) => p.id === id)) {
+    state.selectedPlaylistId = id;
+    state.view = "playlist";
+  } else {
+    state.view = view;
+  }
+}
 renderAll();
+writeHash();
 // Don't auto-play on load (browser policy), but restore the meta so player has context.
 if (state.currentId) {
   const t = trackById(state.currentId);
