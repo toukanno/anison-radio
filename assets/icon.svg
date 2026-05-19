@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="anison-radio">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff4d9d"/>
+      <stop offset="50%" stop-color="#ff7a55"/>
+      <stop offset="100%" stop-color="#ffb13d"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0a0d1f"/>
+  <rect x="32" y="32" width="448" height="448" rx="80" fill="url(#g)"/>
+  <g fill="#0a0d1f" transform="translate(112 96)">
+    <path d="M0 0 L60 0 L60 240 A60 60 0 1 1 0 180 Z"/>
+    <path d="M200 -16 L260 -32 L260 200 A60 60 0 1 1 200 140 Z"/>
+    <path d="M60 -8 L260 -56 L260 4 L60 52 Z"/>
+  </g>
+</svg>
