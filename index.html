@@ -50,6 +50,7 @@
             <input id="search" type="search" placeholder="曲名・アーティスト・作品名で検索" autocomplete="off" />
           </div>
           <div class="topbar-actions">
+            <button id="help-btn" class="ghost-btn" title="ショートカット" aria-label="キーボードショートカット">?</button>
             <button id="install-btn" class="pill-btn" hidden>アプリをインストール</button>
           </div>
         </header>
@@ -60,6 +61,12 @@
             <h1>アニソンを、もっと自由に。</h1>
             <p class="subtitle">人気アニソンを発見・再生・プレイリスト化。Spotifyライクな操作感。</p>
           </header>
+
+          <h2 class="section-title">本日のおすすめ</h2>
+          <div id="featured-shelf" class="card-shelf"></div>
+
+          <h2 class="section-title">ジャンル</h2>
+          <div id="genre-shelf" class="card-shelf"></div>
 
           <h2 class="section-title">注目のアニメ</h2>
           <div id="anime-shelf" class="card-shelf"></div>
@@ -107,6 +114,13 @@
         </section>
       </main>
 
+      <nav class="mobile-nav" aria-label="モバイルナビゲーション">
+        <button class="mnav active" data-view="home" aria-label="ホーム">⌂<span>ホーム</span></button>
+        <button class="mnav" data-view="search" aria-label="検索">⌕<span>検索</span></button>
+        <button class="mnav" data-view="library" aria-label="ライブラリ">♡<span>ライブラリ</span></button>
+        <button class="mnav" data-view="queue" aria-label="キュー">≡<span>キュー</span></button>
+      </nav>
+
       <footer class="player" aria-label="プレイヤー">
         <div class="player-meta">
           <div class="cover" id="player-cover" aria-hidden="true"></div>
@@ -147,6 +161,26 @@
         <menu>
           <button value="cancel" class="ghost-btn">キャンセル</button>
           <button id="prompt-ok" value="ok" class="pill-btn primary">OK</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="shortcuts-dialog" class="dialog">
+      <form method="dialog">
+        <h3>キーボードショートカット</h3>
+        <dl class="kbd-grid">
+          <dt><kbd>Space</kbd></dt><dd>再生 / 一時停止</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>←</kbd> / <kbd>→</kbd></dt><dd>前の曲 / 次の曲</dd>
+          <dt><kbd>←</kbd> / <kbd>→</kbd></dt><dd>5秒戻る / 進む</dd>
+          <dt><kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>音量アップ / ダウン</dd>
+          <dt><kbd>M</kbd></dt><dd>ミュート切替</dd>
+          <dt><kbd>L</kbd></dt><dd>お気に入り切替</dd>
+          <dt><kbd>S</kbd></dt><dd>シャッフル切替</dd>
+          <dt><kbd>R</kbd></dt><dd>リピート切替</dd>
+          <dt><kbd>/</kbd></dt><dd>検索にフォーカス</dd>
+        </dl>
+        <menu>
+          <button value="cancel" class="pill-btn">閉じる</button>
         </menu>
       </form>
     </dialog>

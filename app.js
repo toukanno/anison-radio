@@ -149,13 +149,16 @@ const playbackEngine = (() => {
     if (ctx.state === "suspended") ctx.resume();
     toneOsc = ctx.createOscillator();
     toneGain = ctx.createGain();
-    // Pick a pitch derived from the track id so each song sounds unique.
     let h = 0;
     for (let i = 0; i < track.id.length; i++) h = (h * 31 + track.id.charCodeAt(i)) >>> 0;
     const baseHz = 220 + (h % 220);
-    toneOsc.type = "sine";
+    toneOsc.type = "triangle";
     toneOsc.frequency.value = baseHz;
-    toneGain.gain.value = currentGain();
+    // Soft attack so it doesn't pop when starting.
+    const target = currentGain();
+    const now = ctx.currentTime;
+    toneGain.gain.setValueAtTime(0, now);
+    toneGain.gain.linearRampToValueAtTime(target, now + 0.05);
     toneOsc.connect(toneGain).connect(ctx.destination);
     toneOsc.start();
     emit("meta", toneDuration);
@@ -414,6 +417,8 @@ const el = {
   trackList: $("#track-list"),
   searchResults: $("#search-results"),
   animeShelf: $("#anime-shelf"),
+  featuredShelf: $("#featured-shelf"),
+  genreShelf: $("#genre-shelf"),
   recentShelf: $("#recent-shelf"),
   likedList: $("#liked-list"),
   recentList: $("#recent-list"),
@@ -498,6 +503,64 @@ function renderTrackListInto(container, list, opts = {}) {
     return;
   }
   list.forEach((track, i) => container.append(renderTrackItem(track, { index: i, ctxPlaylistId: opts.ctxPlaylistId })));
+}
+
+// Stable "today's pick" derived from the local date so it changes once a day.
+function todaySeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+function pseudoShuffle(list, seed) {
+  const arr = list.slice();
+  let s = seed >>> 0;
+  const rand = () => (s = (s * 1664525 + 1013904223) >>> 0) / 0x100000000;
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function renderFeaturedShelf() {
+  if (!el.featuredShelf) return;
+  el.featuredShelf.innerHTML = "";
+  const picks = pseudoShuffle(tracks, todaySeed()).slice(0, 6);
+  for (const t of picks) {
+    const frag = cardTemplate.content.cloneNode(true);
+    const btn = frag.querySelector(".card");
+    frag.querySelector(".card-title").textContent = t.title;
+    frag.querySelector(".card-sub").textContent = `${t.artist} • ${t.anime}`;
+    frag.querySelector(".card-cover").style.setProperty("--cover", coverGradient(t));
+    btn.addEventListener("click", () => playTrack(t.id));
+    el.featuredShelf.append(frag);
+  }
+}
+
+function renderGenreShelf() {
+  if (!el.genreShelf) return;
+  const genres = new Map();
+  for (const t of tracks) {
+    for (const tag of t.tags || []) {
+      if (!genres.has(tag)) genres.set(tag, []);
+      genres.get(tag).push(t);
+    }
+  }
+  el.genreShelf.innerHTML = "";
+  // Sort by size desc, then alpha
+  const sorted = Array.from(genres.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  for (const [tag, list] of sorted) {
+    const frag = cardTemplate.content.cloneNode(true);
+    const btn = frag.querySelector(".card");
+    frag.querySelector(".card-title").textContent = `#${tag}`;
+    frag.querySelector(".card-sub").textContent = `${list.length} 曲`;
+    frag.querySelector(".card-cover").style.setProperty("--cover", coverGradient(list[0]));
+    btn.addEventListener("click", () => {
+      state.query = tag;
+      el.search.value = tag;
+      switchView("search");
+    });
+    el.genreShelf.append(frag);
+  }
 }
 
 function renderAnimeShelf() {
@@ -604,7 +667,7 @@ function renderSidebar() {
     li.append(btn);
     el.playlistList.append(li);
   }
-  $$(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.view === state.view));
+  $$(".nav-item, .mnav").forEach((n) => n.classList.toggle("active", n.dataset.view === state.view));
 }
 
 function renderPlayer() {
@@ -633,6 +696,8 @@ function renderViews() {
 function renderAll() {
   renderViews();
   renderSidebar();
+  renderFeaturedShelf();
+  renderGenreShelf();
   renderAnimeShelf();
   renderRecentShelf();
   renderTrackList();
@@ -762,13 +827,19 @@ el.volume.addEventListener("input", (e) => {
 
 el.search.addEventListener("input", (e) => {
   state.query = e.target.value;
-  if (state.view !== "search" && state.query) switchView("search");
-  renderSearch();
+  if (state.view !== "search" && state.query) {
+    switchView("search");
+    el.search.focus();
+  } else {
+    renderSearch();
+  }
 });
 
-$$(".nav-item").forEach((btn) => {
+$$(".nav-item, .mnav").forEach((btn) => {
   btn.addEventListener("click", () => switchView(btn.dataset.view));
 });
+
+$("#help-btn")?.addEventListener("click", () => $("#shortcuts-dialog").showModal());
 
 el.queueToggle.addEventListener("click", () => switchView("queue"));
 
@@ -903,6 +974,9 @@ if ("serviceWorker" in navigator) {
 // Boot
 
 playbackEngine.setVolume(state.volume, state.muted);
+el.seek.style.setProperty("--p", "0%");
+el.timeNow.textContent = "0:00";
+el.timeTotal.textContent = "0:00";
 renderAll();
 // Don't auto-play on load (browser policy), but restore the meta so player has context.
 if (state.currentId) {
