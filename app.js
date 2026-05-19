@@ -272,13 +272,13 @@ function pushRecent(id) {
 }
 
 function pickNextId() {
-  // Queue takes priority
+  // Queue takes priority. repeat=one is handled by the auto-advance listener;
+  // manual "next" should still advance.
   if (state.queue.length) {
     const [next, ...rest] = state.queue;
     state.queue = rest;
     return next;
   }
-  if (state.repeat === "one" && state.currentId) return state.currentId;
   if (state.shuffle) {
     const others = tracks.filter((t) => t.id !== state.currentId);
     if (!others.length) return state.currentId;
